@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 #import "AWSLambdaResources.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+//! SDK version for AWSLambda
+FOUNDATION_EXPORT NSString *const AWSLambdaSDKVersion;
 
 /**
  <fullname>AWS Lambda</fullname><p><b>Overview</b></p><p>This is the <i>AWS Lambda API Reference</i>. The AWS Lambda Developer Guide provides additional information. For the service overview, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/welcome.html">What is AWS Lambda</a>, and for information about how the service works, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/lambda-introduction.html">AWS Lambda: How it Works</a> in the <b>AWS Lambda Developer Guide</b>.</p>
@@ -172,7 +175,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)removeLambdaForKey:(NSString *)key;
 
 /**
- <p>Adds a permission to the resource policy associated with the specified AWS Lambda function. You use resource policies to grant permissions to event sources that use <i>push</i> model. In a <i>push</i> model, event sources (such as Amazon S3 and custom applications) invoke your Lambda function. Each permission you add to the resource policy allows an event source, permission to invoke the Lambda function. </p><p>For information about the push model, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/lambda-introduction.html">Lambda Functions</a>. </p><p>If you are using versioning, the permissions you add are specific to the Lambda function version or alias you specify in the <code>AddPermission</code> request via the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:AddPermission</code> action.</p>
+ <p>Adds a permission to the resource policy associated with the specified AWS Lambda function. You use resource policies to grant permissions to event sources that use the <i>push</i> model. In a <i>push</i> model, event sources (such as Amazon S3 and custom applications) invoke your Lambda function. Each permission you add to the resource policy allows an event source permission to invoke the Lambda function. </p><p>Permissions apply to the Amazon Resource Name (ARN) used to invoke the function, which can be unqualified (the unpublished version of the function), or include a version or alias. If a client uses a version or alias to invoke a function, use the <code>Qualifier</code> parameter to apply permissions to that ARN. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:AddPermission</code> action.</p>
  
  @param request A container for the necessary parameters to execute the AddPermission service method.
 
@@ -184,7 +187,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaAddPermissionResponse *> *)addPermission:(AWSLambdaAddPermissionRequest *)request;
 
 /**
- <p>Adds a permission to the resource policy associated with the specified AWS Lambda function. You use resource policies to grant permissions to event sources that use <i>push</i> model. In a <i>push</i> model, event sources (such as Amazon S3 and custom applications) invoke your Lambda function. Each permission you add to the resource policy allows an event source, permission to invoke the Lambda function. </p><p>For information about the push model, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/lambda-introduction.html">Lambda Functions</a>. </p><p>If you are using versioning, the permissions you add are specific to the Lambda function version or alias you specify in the <code>AddPermission</code> request via the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:AddPermission</code> action.</p>
+ <p>Adds a permission to the resource policy associated with the specified AWS Lambda function. You use resource policies to grant permissions to event sources that use the <i>push</i> model. In a <i>push</i> model, event sources (such as Amazon S3 and custom applications) invoke your Lambda function. Each permission you add to the resource policy allows an event source permission to invoke the Lambda function. </p><p>Permissions apply to the Amazon Resource Name (ARN) used to invoke the function, which can be unqualified (the unpublished version of the function), or include a version or alias. If a client uses a version or alias to invoke a function, use the <code>Qualifier</code> parameter to apply permissions to that ARN. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:AddPermission</code> action.</p>
  
  @param request A container for the necessary parameters to execute the AddPermission service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -222,7 +225,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)createAlias:(AWSLambdaCreateAliasRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaAliasConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Identifies a stream as an event source for a Lambda function. It can be either an Amazon Kinesis stream or an Amazon DynamoDB stream. AWS Lambda invokes the specified function when records are posted to the stream.</p><p>This association between a stream source and a Lambda function is called the event source mapping.</p><p>You provide mapping information (for example, which stream to read from and which Lambda function to invoke) in the request body.</p><p>Each event source, such as an Amazon Kinesis or a DynamoDB stream, can be associated with multiple AWS Lambda functions. A given Lambda function can be associated with multiple AWS event sources.</p><p>If you are using versioning, you can specify a specific function version or an alias via the function name parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateEventSourceMapping</code> action.</p>
+ <p>Identifies a poll-based event source for a Lambda function. It can be either an Amazon Kinesis or DynamoDB stream. AWS Lambda invokes the specified function when records are posted to the event source.</p><p>This association between a poll-based source and a Lambda function is called the event source mapping.</p><p>You provide mapping information (for example, which stream or SQS queue to read from and which Lambda function to invoke) in the request body.</p><p>Amazon Kinesis or DynamoDB stream event sources can be associated with multiple AWS Lambda functions and a given Lambda function can be associated with multiple AWS event sources. For Amazon SQS, you can configure multiple queues as event sources for a single Lambda function, but an SQS queue can be mapped only to a single Lambda function.</p><p>You can configure an SQS queue in an account separate from your Lambda function's account. Also the queue needs to reside in the same AWS region as your function. </p><p>If you are using versioning, you can specify a specific function version or an alias via the function name parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateEventSourceMapping</code> action.</p>
  
  @param request A container for the necessary parameters to execute the CreateEventSourceMapping service method.
 
@@ -234,7 +237,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaEventSourceMappingConfiguration *> *)createEventSourceMapping:(AWSLambdaCreateEventSourceMappingRequest *)request;
 
 /**
- <p>Identifies a stream as an event source for a Lambda function. It can be either an Amazon Kinesis stream or an Amazon DynamoDB stream. AWS Lambda invokes the specified function when records are posted to the stream.</p><p>This association between a stream source and a Lambda function is called the event source mapping.</p><p>You provide mapping information (for example, which stream to read from and which Lambda function to invoke) in the request body.</p><p>Each event source, such as an Amazon Kinesis or a DynamoDB stream, can be associated with multiple AWS Lambda functions. A given Lambda function can be associated with multiple AWS event sources.</p><p>If you are using versioning, you can specify a specific function version or an alias via the function name parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateEventSourceMapping</code> action.</p>
+ <p>Identifies a poll-based event source for a Lambda function. It can be either an Amazon Kinesis or DynamoDB stream. AWS Lambda invokes the specified function when records are posted to the event source.</p><p>This association between a poll-based source and a Lambda function is called the event source mapping.</p><p>You provide mapping information (for example, which stream or SQS queue to read from and which Lambda function to invoke) in the request body.</p><p>Amazon Kinesis or DynamoDB stream event sources can be associated with multiple AWS Lambda functions and a given Lambda function can be associated with multiple AWS event sources. For Amazon SQS, you can configure multiple queues as event sources for a single Lambda function, but an SQS queue can be mapped only to a single Lambda function.</p><p>You can configure an SQS queue in an account separate from your Lambda function's account. Also the queue needs to reside in the same AWS region as your function. </p><p>If you are using versioning, you can specify a specific function version or an alias via the function name parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateEventSourceMapping</code> action.</p>
  
  @param request A container for the necessary parameters to execute the CreateEventSourceMapping service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -247,7 +250,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)createEventSourceMapping:(AWSLambdaCreateEventSourceMappingRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaEventSourceMappingConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Creates a new Lambda function. The function metadata is created from the request parameters, and the code for the function is provided by a .zip file in the request body. If the function name already exists, the operation will fail. Note that the function name is case-sensitive.</p><p> If you are using versioning, you can also publish a version of the Lambda function you are creating using the <code>Publish</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateFunction</code> action.</p>
+ <p>Creates a new Lambda function. The function configuration is created from the request parameters, and the code for the function is provided by a .zip file. The function name is case-sensitive.</p><p>This operation requires permission for the <code>lambda:CreateFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the CreateFunction service method.
 
@@ -259,7 +262,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaFunctionConfiguration *> *)createFunction:(AWSLambdaCreateFunctionRequest *)request;
 
 /**
- <p>Creates a new Lambda function. The function metadata is created from the request parameters, and the code for the function is provided by a .zip file in the request body. If the function name already exists, the operation will fail. Note that the function name is case-sensitive.</p><p> If you are using versioning, you can also publish a version of the Lambda function you are creating using the <code>Publish</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:CreateFunction</code> action.</p>
+ <p>Creates a new Lambda function. The function configuration is created from the request parameters, and the code for the function is provided by a .zip file. The function name is case-sensitive.</p><p>This operation requires permission for the <code>lambda:CreateFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the CreateFunction service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -298,7 +301,7 @@ NS_ASSUME_NONNULL_BEGIN
  
  @param request A container for the necessary parameters to execute the DeleteEventSourceMapping service method.
 
- @return An instance of `AWSTask`. On successful execution, `task.result` will contain an instance of `AWSLambdaEventSourceMappingConfiguration`. On failed execution, `task.error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`.
+ @return An instance of `AWSTask`. On successful execution, `task.result` will contain an instance of `AWSLambdaEventSourceMappingConfiguration`. On failed execution, `task.error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceInUse`.
  
  @see AWSLambdaDeleteEventSourceMappingRequest
  @see AWSLambdaEventSourceMappingConfiguration
@@ -311,7 +314,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param request A container for the necessary parameters to execute the DeleteEventSourceMapping service method.
  @param completionHandler The completion handler to call when the load request is complete.
                           `response` - A response object, or `nil` if the request failed.
-                          `error` - An error object that indicates why the request failed, or `nil` if the request was successful. On failed execution, `error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`.
+                          `error` - An error object that indicates why the request failed, or `nil` if the request was successful. On failed execution, `error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceInUse`.
  
  @see AWSLambdaDeleteEventSourceMappingRequest
  @see AWSLambdaEventSourceMappingConfiguration
@@ -319,7 +322,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)deleteEventSourceMapping:(AWSLambdaDeleteEventSourceMappingRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaEventSourceMappingConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Deletes the specified Lambda function code and configuration.</p><p>If you are using the versioning feature and you don't specify a function version in your <code>DeleteFunction</code> request, AWS Lambda will delete the function, including all its versions, and any aliases pointing to the function versions. To delete a specific function version, you must provide the function version via the <code>Qualifier</code> parameter. For information about function versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>When you delete a function the associated resource policy is also deleted. You will need to delete the event source mappings explicitly.</p><p>This operation requires permission for the <code>lambda:DeleteFunction</code> action.</p>
+ <p>Deletes a Lambda function. To delete a specific function version, use the <code>Qualifier</code> parameter. Otherwise, all versions and aliases are deleted. Event source mappings are not deleted.</p><p>This operation requires permission for the <code>lambda:DeleteFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the DeleteFunction service method.
 
@@ -330,7 +333,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask *)deleteFunction:(AWSLambdaDeleteFunctionRequest *)request;
 
 /**
- <p>Deletes the specified Lambda function code and configuration.</p><p>If you are using the versioning feature and you don't specify a function version in your <code>DeleteFunction</code> request, AWS Lambda will delete the function, including all its versions, and any aliases pointing to the function versions. To delete a specific function version, you must provide the function version via the <code>Qualifier</code> parameter. For information about function versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>When you delete a function the associated resource policy is also deleted. You will need to delete the event source mappings explicitly.</p><p>This operation requires permission for the <code>lambda:DeleteFunction</code> action.</p>
+ <p>Deletes a Lambda function. To delete a specific function version, use the <code>Qualifier</code> parameter. Otherwise, all versions and aliases are deleted. Event source mappings are not deleted.</p><p>This operation requires permission for the <code>lambda:DeleteFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the DeleteFunction service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -341,7 +344,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)deleteFunction:(AWSLambdaDeleteFunctionRequest *)request completionHandler:(void (^ _Nullable)(NSError * _Nullable error))completionHandler;
 
 /**
- <p>Removes concurrent execution limits from this function. For more information, see <a>concurrent-executions</a>.</p>
+ <p>Removes concurrent execution limits from this function. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/concurrent-executions.html">Managing Concurrency</a>.</p>
  
  @param request A container for the necessary parameters to execute the DeleteFunctionConcurrency service method.
 
@@ -352,7 +355,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask *)deleteFunctionConcurrency:(AWSLambdaDeleteFunctionConcurrencyRequest *)request;
 
 /**
- <p>Removes concurrent execution limits from this function. For more information, see <a>concurrent-executions</a>.</p>
+ <p>Removes concurrent execution limits from this function. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/concurrent-executions.html">Managing Concurrency</a>.</p>
  
  @param request A container for the necessary parameters to execute the DeleteFunctionConcurrency service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -363,7 +366,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)deleteFunctionConcurrency:(AWSLambdaDeleteFunctionConcurrencyRequest *)request completionHandler:(void (^ _Nullable)(NSError * _Nullable error))completionHandler;
 
 /**
- <p>Returns a customer's account settings.</p><p>You can use this operation to retrieve Lambda limits information, such as code size and concurrency limits. For more information about limits, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/limits.html">AWS Lambda Limits</a>. You can also retrieve resource usage statistics, such as code storage usage and function count.</p>
+ <p>Retrieves details about your account's <a href="http://docs.aws.amazon.com/lambda/latest/dg/limits.html">limits</a> and usage in a region.</p>
  
  @param request A container for the necessary parameters to execute the GetAccountSettings service method.
 
@@ -375,7 +378,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaGetAccountSettingsResponse *> *)getAccountSettings:(AWSLambdaGetAccountSettingsRequest *)request;
 
 /**
- <p>Returns a customer's account settings.</p><p>You can use this operation to retrieve Lambda limits information, such as code size and concurrency limits. For more information about limits, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/limits.html">AWS Lambda Limits</a>. You can also retrieve resource usage statistics, such as code storage usage and function count.</p>
+ <p>Retrieves details about your account's <a href="http://docs.aws.amazon.com/lambda/latest/dg/limits.html">limits</a> and usage in a region.</p>
  
  @param request A container for the necessary parameters to execute the GetAccountSettings service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -438,7 +441,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)getEventSourceMapping:(AWSLambdaGetEventSourceMappingRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaEventSourceMappingConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Returns the configuration information of the Lambda function and a presigned URL link to the .zip file you uploaded with <a>CreateFunction</a> so you can download the .zip file. Note that the URL is valid for up to 10 minutes. The configuration information is the same information you provided as parameters when uploading the function.</p><p>Using the optional <code>Qualifier</code> parameter, you can specify a specific function version for which you want this information. If you don't specify this parameter, the API uses unqualified function ARN which return information about the <code>$LATEST</code> version of the Lambda function. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>.</p><p>This operation requires permission for the <code>lambda:GetFunction</code> action.</p>
+ <p>Returns the configuration information of the Lambda function and a presigned URL link to the .zip file you uploaded with <a>CreateFunction</a> so you can download the .zip file. Note that the URL is valid for up to 10 minutes. The configuration information is the same information you provided as parameters when uploading the function.</p><p>Use the <code>Qualifier</code> parameter to retrieve a published version of the function. Otherwise, returns the unpublished version (<code>$LATEST</code>). For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>.</p><p>This operation requires permission for the <code>lambda:GetFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the GetFunction service method.
 
@@ -450,7 +453,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaGetFunctionResponse *> *)getFunction:(AWSLambdaGetFunctionRequest *)request;
 
 /**
- <p>Returns the configuration information of the Lambda function and a presigned URL link to the .zip file you uploaded with <a>CreateFunction</a> so you can download the .zip file. Note that the URL is valid for up to 10 minutes. The configuration information is the same information you provided as parameters when uploading the function.</p><p>Using the optional <code>Qualifier</code> parameter, you can specify a specific function version for which you want this information. If you don't specify this parameter, the API uses unqualified function ARN which return information about the <code>$LATEST</code> version of the Lambda function. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>.</p><p>This operation requires permission for the <code>lambda:GetFunction</code> action.</p>
+ <p>Returns the configuration information of the Lambda function and a presigned URL link to the .zip file you uploaded with <a>CreateFunction</a> so you can download the .zip file. Note that the URL is valid for up to 10 minutes. The configuration information is the same information you provided as parameters when uploading the function.</p><p>Use the <code>Qualifier</code> parameter to retrieve a published version of the function. Otherwise, returns the unpublished version (<code>$LATEST</code>). For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>.</p><p>This operation requires permission for the <code>lambda:GetFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the GetFunction service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -488,7 +491,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)getFunctionConfiguration:(AWSLambdaGetFunctionConfigurationRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaFunctionConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Returns the resource policy associated with the specified Lambda function.</p><p> If you are using the versioning feature, you can get the resource policy associated with the specific Lambda function version or alias by specifying the version or alias name using the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>You need permission for the <code>lambda:GetPolicy action.</code></p>
+ <p>Returns the resource policy associated with the specified Lambda function.</p><p>This action requires permission for the <code>lambda:GetPolicy action.</code></p>
  
  @param request A container for the necessary parameters to execute the GetPolicy service method.
 
@@ -500,7 +503,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaGetPolicyResponse *> *)getPolicy:(AWSLambdaGetPolicyRequest *)request;
 
 /**
- <p>Returns the resource policy associated with the specified Lambda function.</p><p> If you are using the versioning feature, you can get the resource policy associated with the specific Lambda function version or alias by specifying the version or alias name using the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>You need permission for the <code>lambda:GetPolicy action.</code></p>
+ <p>Returns the resource policy associated with the specified Lambda function.</p><p>This action requires permission for the <code>lambda:GetPolicy action.</code></p>
  
  @param request A container for the necessary parameters to execute the GetPolicy service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -513,7 +516,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)getPolicy:(AWSLambdaGetPolicyRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaGetPolicyResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Invokes a specific Lambda function. For an example, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/with-dynamodb-create-function.html#with-dbb-invoke-manually">Create the Lambda Function and Test It Manually</a>. </p><p>If you are using the versioning feature, you can invoke the specific function version by providing function version or alias name that is pointing to the function version using the <code>Qualifier</code> parameter in the request. If you don't provide the <code>Qualifier</code> parameter, the <code>$LATEST</code> version of the Lambda function is invoked. Invocations occur at least once in response to an event and functions must be idempotent to handle this. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p><note><p>The <code>TooManyRequestsException</code> noted below will return the following: <code>ConcurrentInvocationLimitExceeded</code> will be returned if you have no functions with reserved concurrency and have exceeded your account concurrent limit or if a function without reserved concurrency exceeds the account's unreserved concurrency limit. <code>ReservedFunctionConcurrentInvocationLimitExceeded</code> will be returned when a function with reserved concurrency exceeds its configured concurrency limit. </p></note>
+ <p>Invokes a Lambda function. For an example, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/with-dynamodb-create-function.html#with-dbb-invoke-manually">Create the Lambda Function and Test It Manually</a>. </p><p>Specify just a function name to invoke the latest version of the function. To invoke a published version, use the <code>Qualifier</code> parameter to specify a <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">version or alias</a>.</p><p>If you use the <code>RequestResponse</code> (synchronous) invocation option, the function will be invoked only once. If you use the <code>Event</code> (asynchronous) invocation option, the function will be invoked at least once in response to an event and the function must be idempotent to handle this.</p><p>For functions with a long timeout, your client may be disconnected during synchronous invocation while it waits for a response. Configure your HTTP client, SDK, firewall, proxy, or operating system to allow for long connections with timeout or keep-alive settings.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p><p>The <code>TooManyRequestsException</code> noted below will return the following: <code>ConcurrentInvocationLimitExceeded</code> will be returned if you have no functions with reserved concurrency and have exceeded your account concurrent limit or if a function without reserved concurrency exceeds the account's unreserved concurrency limit. <code>ReservedFunctionConcurrentInvocationLimitExceeded</code> will be returned when a function with reserved concurrency exceeds its configured concurrency limit. </p>
  
  @param request A container for the necessary parameters to execute the Invoke service method.
 
@@ -525,7 +528,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaInvocationResponse *> *)invoke:(AWSLambdaInvocationRequest *)request;
 
 /**
- <p>Invokes a specific Lambda function. For an example, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/with-dynamodb-create-function.html#with-dbb-invoke-manually">Create the Lambda Function and Test It Manually</a>. </p><p>If you are using the versioning feature, you can invoke the specific function version by providing function version or alias name that is pointing to the function version using the <code>Qualifier</code> parameter in the request. If you don't provide the <code>Qualifier</code> parameter, the <code>$LATEST</code> version of the Lambda function is invoked. Invocations occur at least once in response to an event and functions must be idempotent to handle this. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p><note><p>The <code>TooManyRequestsException</code> noted below will return the following: <code>ConcurrentInvocationLimitExceeded</code> will be returned if you have no functions with reserved concurrency and have exceeded your account concurrent limit or if a function without reserved concurrency exceeds the account's unreserved concurrency limit. <code>ReservedFunctionConcurrentInvocationLimitExceeded</code> will be returned when a function with reserved concurrency exceeds its configured concurrency limit. </p></note>
+ <p>Invokes a Lambda function. For an example, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/with-dynamodb-create-function.html#with-dbb-invoke-manually">Create the Lambda Function and Test It Manually</a>. </p><p>Specify just a function name to invoke the latest version of the function. To invoke a published version, use the <code>Qualifier</code> parameter to specify a <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">version or alias</a>.</p><p>If you use the <code>RequestResponse</code> (synchronous) invocation option, the function will be invoked only once. If you use the <code>Event</code> (asynchronous) invocation option, the function will be invoked at least once in response to an event and the function must be idempotent to handle this.</p><p>For functions with a long timeout, your client may be disconnected during synchronous invocation while it waits for a response. Configure your HTTP client, SDK, firewall, proxy, or operating system to allow for long connections with timeout or keep-alive settings.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p><p>The <code>TooManyRequestsException</code> noted below will return the following: <code>ConcurrentInvocationLimitExceeded</code> will be returned if you have no functions with reserved concurrency and have exceeded your account concurrent limit or if a function without reserved concurrency exceeds the account's unreserved concurrency limit. <code>ReservedFunctionConcurrentInvocationLimitExceeded</code> will be returned when a function with reserved concurrency exceeds its configured concurrency limit. </p>
  
  @param request A container for the necessary parameters to execute the Invoke service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -538,7 +541,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)invoke:(AWSLambdaInvocationRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaInvocationResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <important><p>This API is deprecated. We recommend you use <code>Invoke</code> API (see <a>Invoke</a>).</p></important><p>Submits an invocation request to AWS Lambda. Upon receiving the request, Lambda executes the specified function asynchronously. To see the logs generated by the Lambda function execution, see the CloudWatch Logs console.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p>
+ <important><p>For asynchronous function invocation, use <a>Invoke</a>.</p></important><p>Submits an invocation request to AWS Lambda. Upon receiving the request, Lambda executes the specified function asynchronously. To see the logs generated by the Lambda function execution, see the CloudWatch Logs console.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the InvokeAsync service method.
 
@@ -550,7 +553,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaInvokeAsyncResponse *> *)invokeAsync:(AWSLambdaInvokeAsyncRequest *)request;
 
 /**
- <important><p>This API is deprecated. We recommend you use <code>Invoke</code> API (see <a>Invoke</a>).</p></important><p>Submits an invocation request to AWS Lambda. Upon receiving the request, Lambda executes the specified function asynchronously. To see the logs generated by the Lambda function execution, see the CloudWatch Logs console.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p>
+ <important><p>For asynchronous function invocation, use <a>Invoke</a>.</p></important><p>Submits an invocation request to AWS Lambda. Upon receiving the request, Lambda executes the specified function asynchronously. To see the logs generated by the Lambda function execution, see the CloudWatch Logs console.</p><p>This operation requires permission for the <code>lambda:InvokeFunction</code> action.</p>
  
  @param request A container for the necessary parameters to execute the InvokeAsync service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -588,7 +591,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)listAliases:(AWSLambdaListAliasesRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaListAliasesResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Returns a list of event source mappings you created using the <code>CreateEventSourceMapping</code> (see <a>CreateEventSourceMapping</a>). </p><p>For each mapping, the API returns configuration information. You can optionally specify filters to retrieve specific event source mappings.</p><p>If you are using the versioning feature, you can get list of event source mappings for a specific Lambda function version or an alias as described in the <code>FunctionName</code> parameter. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:ListEventSourceMappings</code> action.</p>
+ <p>Returns a list of event source mappings you created using the <code>CreateEventSourceMapping</code> (see <a>CreateEventSourceMapping</a>). </p><p>For each mapping, the API returns configuration information. You can optionally specify filters to retrieve specific event source mappings.</p><p>This operation requires permission for the <code>lambda:ListEventSourceMappings</code> action.</p>
  
  @param request A container for the necessary parameters to execute the ListEventSourceMappings service method.
 
@@ -600,7 +603,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaListEventSourceMappingsResponse *> *)listEventSourceMappings:(AWSLambdaListEventSourceMappingsRequest *)request;
 
 /**
- <p>Returns a list of event source mappings you created using the <code>CreateEventSourceMapping</code> (see <a>CreateEventSourceMapping</a>). </p><p>For each mapping, the API returns configuration information. You can optionally specify filters to retrieve specific event source mappings.</p><p>If you are using the versioning feature, you can get list of event source mappings for a specific Lambda function version or an alias as described in the <code>FunctionName</code> parameter. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>This operation requires permission for the <code>lambda:ListEventSourceMappings</code> action.</p>
+ <p>Returns a list of event source mappings you created using the <code>CreateEventSourceMapping</code> (see <a>CreateEventSourceMapping</a>). </p><p>For each mapping, the API returns configuration information. You can optionally specify filters to retrieve specific event source mappings.</p><p>This operation requires permission for the <code>lambda:ListEventSourceMappings</code> action.</p>
  
  @param request A container for the necessary parameters to execute the ListEventSourceMappings service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -663,7 +666,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)listTags:(AWSLambdaListTagsRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaListTagsResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>List all versions of a function. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p>
+ <p>Lists all versions of a function. For information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p>
  
  @param request A container for the necessary parameters to execute the ListVersionsByFunction service method.
 
@@ -675,7 +678,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaListVersionsByFunctionResponse *> *)listVersionsByFunction:(AWSLambdaListVersionsByFunctionRequest *)request;
 
 /**
- <p>List all versions of a function. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p>
+ <p>Lists all versions of a function. For information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p>
  
  @param request A container for the necessary parameters to execute the ListVersionsByFunction service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -713,7 +716,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)publishVersion:(AWSLambdaPublishVersionRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaFunctionConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>Sets a limit on the number of concurrent executions available to this function. It is a subset of your account's total concurrent execution limit per region. Note that Lambda automatically reserves a buffer of 100 concurrent executions for functions without any reserved concurrency limit. This means if your account limit is 1000, you have a total of 900 available to allocate to individual functions. For more information, see <a>concurrent-executions</a>.</p>
+ <p>Sets a limit on the number of concurrent executions available to this function. It is a subset of your account's total concurrent execution limit per region. Note that Lambda automatically reserves a buffer of 100 concurrent executions for functions without any reserved concurrency limit. This means if your account limit is 1000, you have a total of 900 available to allocate to individual functions. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/concurrent-executions.html">Managing Concurrency</a>.</p>
  
  @param request A container for the necessary parameters to execute the PutFunctionConcurrency service method.
 
@@ -725,7 +728,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaConcurrency *> *)putFunctionConcurrency:(AWSLambdaPutFunctionConcurrencyRequest *)request;
 
 /**
- <p>Sets a limit on the number of concurrent executions available to this function. It is a subset of your account's total concurrent execution limit per region. Note that Lambda automatically reserves a buffer of 100 concurrent executions for functions without any reserved concurrency limit. This means if your account limit is 1000, you have a total of 900 available to allocate to individual functions. For more information, see <a>concurrent-executions</a>.</p>
+ <p>Sets a limit on the number of concurrent executions available to this function. It is a subset of your account's total concurrent execution limit per region. Note that Lambda automatically reserves a buffer of 100 concurrent executions for functions without any reserved concurrency limit. This means if your account limit is 1000, you have a total of 900 available to allocate to individual functions. For more information, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/concurrent-executions.html">Managing Concurrency</a>.</p>
  
  @param request A container for the necessary parameters to execute the PutFunctionConcurrency service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -738,7 +741,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)putFunctionConcurrency:(AWSLambdaPutFunctionConcurrencyRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaConcurrency * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>You can remove individual permissions from an resource policy associated with a Lambda function by providing a statement ID that you provided when you added the permission.</p><p>If you are using versioning, the permissions you remove are specific to the Lambda function version or alias you specify in the <code>AddPermission</code> request via the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>Note that removal of a permission will cause an active event source to lose permission to the function.</p><p>You need permission for the <code>lambda:RemovePermission</code> action.</p>
+ <p>Removes permissions from a function. You can remove individual permissions from an resource policy associated with a Lambda function by providing a statement ID that you provided when you added the permission. When you remove permissions, disable the event source mapping or trigger configuration first to avoid errors.</p><p>Permissions apply to the Amazon Resource Name (ARN) used to invoke the function, which can be unqualified (the unpublished version of the function), or include a version or alias. If a client uses a version or alias to invoke a function, use the <code>Qualifier</code> parameter to apply permissions to that ARN. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>You need permission for the <code>lambda:RemovePermission</code> action.</p>
  
  @param request A container for the necessary parameters to execute the RemovePermission service method.
 
@@ -749,7 +752,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask *)removePermission:(AWSLambdaRemovePermissionRequest *)request;
 
 /**
- <p>You can remove individual permissions from an resource policy associated with a Lambda function by providing a statement ID that you provided when you added the permission.</p><p>If you are using versioning, the permissions you remove are specific to the Lambda function version or alias you specify in the <code>AddPermission</code> request via the <code>Qualifier</code> parameter. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>Note that removal of a permission will cause an active event source to lose permission to the function.</p><p>You need permission for the <code>lambda:RemovePermission</code> action.</p>
+ <p>Removes permissions from a function. You can remove individual permissions from an resource policy associated with a Lambda function by providing a statement ID that you provided when you added the permission. When you remove permissions, disable the event source mapping or trigger configuration first to avoid errors.</p><p>Permissions apply to the Amazon Resource Name (ARN) used to invoke the function, which can be unqualified (the unpublished version of the function), or include a version or alias. If a client uses a version or alias to invoke a function, use the <code>Qualifier</code> parameter to apply permissions to that ARN. For more information about versioning, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>You need permission for the <code>lambda:RemovePermission</code> action.</p>
  
  @param request A container for the necessary parameters to execute the RemovePermission service method.
  @param completionHandler The completion handler to call when the load request is complete.
@@ -829,11 +832,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)updateAlias:(AWSLambdaUpdateAliasRequest *)request completionHandler:(void (^ _Nullable)(AWSLambdaAliasConfiguration * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
- <p>You can update an event source mapping. This is useful if you want to change the parameters of the existing mapping without losing your position in the stream. You can change which function will receive the stream records, but to change the stream itself, you must create a new mapping.</p><p>If you are using the versioning feature, you can update the event source mapping to map to a specific Lambda function version or alias as described in the <code>FunctionName</code> parameter. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>If you disable the event source mapping, AWS Lambda stops polling. If you enable again, it will resume polling from the time it had stopped polling, so you don't lose processing of any records. However, if you delete event source mapping and create it again, it will reset.</p><p>This operation requires permission for the <code>lambda:UpdateEventSourceMapping</code> action.</p>
+ <p>You can update an event source mapping. This is useful if you want to change the parameters of the existing mapping without losing your position in the stream. You can change which function will receive the stream records, but to change the stream itself, you must create a new mapping.</p><p>If you disable the event source mapping, AWS Lambda stops polling. If you enable again, it will resume polling from the time it had stopped polling, so you don't lose processing of any records. However, if you delete event source mapping and create it again, it will reset.</p><p>This operation requires permission for the <code>lambda:UpdateEventSourceMapping</code> action.</p>
  
  @param request A container for the necessary parameters to execute the UpdateEventSourceMapping service method.
 
- @return An instance of `AWSTask`. On successful execution, `task.result` will contain an instance of `AWSLambdaEventSourceMappingConfiguration`. On failed execution, `task.error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceConflict`.
+ @return An instance of `AWSTask`. On successful execution, `task.result` will contain an instance of `AWSLambdaEventSourceMappingConfiguration`. On failed execution, `task.error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceConflict`, `AWSLambdaErrorResourceInUse`.
  
  @see AWSLambdaUpdateEventSourceMappingRequest
  @see AWSLambdaEventSourceMappingConfiguration
@@ -841,12 +844,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (AWSTask<AWSLambdaEventSourceMappingConfiguration *> *)updateEventSourceMapping:(AWSLambdaUpdateEventSourceMappingRequest *)request;
 
 /**
- <p>You can update an event source mapping. This is useful if you want to change the parameters of the existing mapping without losing your position in the stream. You can change which function will receive the stream records, but to change the stream itself, you must create a new mapping.</p><p>If you are using the versioning feature, you can update the event source mapping to map to a specific Lambda function version or alias as described in the <code>FunctionName</code> parameter. For information about the versioning feature, see <a href="http://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html">AWS Lambda Function Versioning and Aliases</a>. </p><p>If you disable the event source mapping, AWS Lambda stops polling. If you enable again, it will resume polling from the time it had stopped polling, so you don't lose processing of any records. However, if you delete event source mapping and create it again, it will reset.</p><p>This operation requires permission for the <code>lambda:UpdateEventSourceMapping</code> action.</p>
+ <p>You can update an event source mapping. This is useful if you want to change the parameters of the existing mapping without losing your position in the stream. You can change which function will receive the stream records, but to change the stream itself, you must create a new mapping.</p><p>If you disable the event source mapping, AWS Lambda stops polling. If you enable again, it will resume polling from the time it had stopped polling, so you don't lose processing of any records. However, if you delete event source mapping and create it again, it will reset.</p><p>This operation requires permission for the <code>lambda:UpdateEventSourceMapping</code> action.</p>
  
  @param request A container for the necessary parameters to execute the UpdateEventSourceMapping service method.
  @param completionHandler The completion handler to call when the load request is complete.
                           `response` - A response object, or `nil` if the request failed.
-                          `error` - An error object that indicates why the request failed, or `nil` if the request was successful. On failed execution, `error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceConflict`.
+                          `error` - An error object that indicates why the request failed, or `nil` if the request was successful. On failed execution, `error` may contain an `NSError` with `AWSLambdaErrorDomain` domain and the following error code: `AWSLambdaErrorService`, `AWSLambdaErrorResourceNotFound`, `AWSLambdaErrorInvalidParameterValue`, `AWSLambdaErrorTooManyRequests`, `AWSLambdaErrorResourceConflict`, `AWSLambdaErrorResourceInUse`.
  
  @see AWSLambdaUpdateEventSourceMappingRequest
  @see AWSLambdaEventSourceMappingConfiguration

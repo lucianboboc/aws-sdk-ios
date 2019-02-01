@@ -14,10 +14,10 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AWSIoTModel.h"
+#import <AWSCore/AWSCore.h>
 #import "AWSIoTDataManager.h"
-
 #import "AWSSRWebSocket.h"
+#import "AWSIoTMQTTTypes.h"
 
 @interface AWSIoTMQTTTopicModel : NSObject
 @property (nonatomic, strong) NSString *topic;
@@ -33,8 +33,26 @@
 @property (nonatomic, strong) AWSIoTMQTTAckBlock ackCallback;
 @end
 
+@class AWSIoTMQTTClient;
+
+@protocol AWSIoTMQTTClientDelegate
+
+-(void)receivedMessageData:(NSData *)data
+                   onTopic:(NSString *)topic;
+
+-(void)connectionStatusChanged:(AWSIoTMQTTStatus)status
+                        client:(AWSIoTMQTTClient *)client;
+@end
+
+
 @interface AWSIoTMQTTClient <AWSSRWebSocketDelegate, NSStreamDelegate>: NSObject
 
+
+/**
+ Delegate object that is called by the AWSIotMQTTClient object as per the AWSiOTMQTTCLientDelegate protocol to communicate changes in communication status and messages received.
+ */
+ 
+@property(nonatomic, strong) id<AWSIoTMQTTClientDelegate> clientDelegate;
 
 /**
  Boolean flag to indicate whether auto-resubscribe feature is enabled. This flag may
@@ -81,7 +99,16 @@
 /**
  An optional associated object (nil by default).
  */
-@property(nonatomic, strong) NSObject *associatedObject;
+@property(nonatomic, weak) NSObject *associatedObject;
+
+/**
+ Initalizer with the Delegate object
+ */
+- (instancetype)initWithDelegate:(id<AWSIoTMQTTClientDelegate>)delegate;
+
+- (BOOL)connectWithClientId:(NSString *)clientId
+               presignedURL:(NSString *)presignedURL
+             statusCallback:(void (^)(AWSIoTMQTTStatus status))callback;
 
 - (BOOL)connectWithClientId:(NSString *)clientId
                      toHost:(NSString *)host
@@ -104,6 +131,20 @@
                     willQoS:(UInt8)willQoS
              willRetainFlag:(BOOL)willRetainFlag
              statusCallback:(void (^)(AWSIoTMQTTStatus status))callback;
+    
+- (BOOL)connectWithClientId:(NSString *)clientId
+               cleanSession:(BOOL)cleanSession
+              configuration:(AWSServiceConfiguration *)configuration
+       customAuthorizerName:(NSString *)customAuthorizerName
+               tokenKeyName:(NSString *)tokenKeyName
+                 tokenValue:(NSString *)tokenValue
+             tokenSignature:(NSString *)tokenSignature
+                  keepAlive:(UInt16)theKeepAliveInterval
+                  willTopic:(NSString*)willTopic
+                    willMsg:(NSData*)willMsg
+                    willQoS:(UInt8)willQoS
+             willRetainFlag:(BOOL)willRetainFlag
+             statusCallback:(void (^)(AWSIoTMQTTStatus status))callback;
 
 - (void)disconnect;
 
@@ -111,10 +152,6 @@
  Send MQTT message to specified topic
 
  @param str The message to be sent.
- 
- @param data The data to be sent.
-
- @param qos The qos to use when sending (optional, default 0).
 
  @param topic The topic for publish to.
 
@@ -122,22 +159,74 @@
 - (void)publishString:(NSString *)str
               onTopic:(NSString *)topic;
 
+/**
+ Send MQTT message to specified topic
+
+ @param str The message to be sent.
+
+ @param qos The qos to use when sending (optional, default 0).
+
+ @param topic The topic for publish to.
+
+ */
 - (void)publishString:(NSString *)str
                   qos:(UInt8)qos
               onTopic:(NSString *)topic;
 
+/**
+ Send MQTT message to specified topic
+
+ @param str The message to be sent.
+
+ @param qos The qos to use when sending (optional, default 0).
+
+ @param topic The topic for publish to.
+
+ @param ackCallback the callback for ack if QoS > 0.
+
+ */
 - (void)publishString:(NSString *)str
                   qos:(UInt8)qos
               onTopic:(NSString *)topic
           ackCallback:(AWSIoTMQTTAckBlock)ackCallback;
 
+/**
+ Send MQTT message to specified topic
+
+ @param data The data to be sent.
+
+ @param topic The topic for publish to.
+
+ */
 - (void)publishData:(NSData *)data
             onTopic:(NSString *)topic;
 
+/**
+ Send MQTT message to specified topic
+
+ @param data The data to be sent.
+
+ @param qos The qos to use when sending (optional, default 0).
+
+ @param topic The topic for publish to.
+
+ */
 - (void)publishData:(NSData *)data
                 qos:(UInt8)qos
             onTopic:(NSString *)topic;
 
+/**
+ Send MQTT message to specified topic
+
+ @param data The data to be sent.
+
+ @param qos The qos to use when sending (optional, default 0).
+
+ @param topic The topic for publish to.
+
+ @param ackCallback the callback for ack if QoS > 0.
+
+ */
 - (void)publishData:(NSData *)data
                 qos:(UInt8)qos
             onTopic:(NSString *)topic
@@ -211,7 +300,7 @@
  Unsubscribes from a topic
  
  @param topic The Topic to unsubscribe from.
- @param ack callback for unsubscribe message.
+ @param ackCallback callback for unsubscribe message.
  
  */
 - (void)unsubscribeTopic:(NSString *)topic

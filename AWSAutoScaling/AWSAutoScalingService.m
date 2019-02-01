@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 #import "AWSAutoScalingResources.h"
 
 static NSString *const AWSInfoAutoScaling = @"AutoScaling";
-static NSString *const AWSAutoScalingSDKVersion = @"2.6.22";
+NSString *const AWSAutoScalingSDKVersion = @"2.8.4";
 
 
 @interface AWSAutoScalingResponseSerializer : AWSXMLResponseSerializer
@@ -337,6 +337,52 @@ static AWSSynchronizedMutableDictionary *_serviceClients = nil;
      completionHandler:(void (^)(AWSAutoScalingAttachLoadBalancersResultType *response, NSError *error))completionHandler {
     [[self attachLoadBalancers:request] continueWithBlock:^id _Nullable(AWSTask<AWSAutoScalingAttachLoadBalancersResultType *> * _Nonnull task) {
         AWSAutoScalingAttachLoadBalancersResultType *result = task.result;
+        NSError *error = task.error;
+
+        if (completionHandler) {
+            completionHandler(result, error);
+        }
+
+        return nil;
+    }];
+}
+
+- (AWSTask<AWSAutoScalingBatchDeleteScheduledActionAnswer *> *)batchDeleteScheduledAction:(AWSAutoScalingBatchDeleteScheduledActionType *)request {
+    return [self invokeRequest:request
+                    HTTPMethod:AWSHTTPMethodPOST
+                     URLString:@""
+                  targetPrefix:@""
+                 operationName:@"BatchDeleteScheduledAction"
+                   outputClass:[AWSAutoScalingBatchDeleteScheduledActionAnswer class]];
+}
+
+- (void)batchDeleteScheduledAction:(AWSAutoScalingBatchDeleteScheduledActionType *)request
+     completionHandler:(void (^)(AWSAutoScalingBatchDeleteScheduledActionAnswer *response, NSError *error))completionHandler {
+    [[self batchDeleteScheduledAction:request] continueWithBlock:^id _Nullable(AWSTask<AWSAutoScalingBatchDeleteScheduledActionAnswer *> * _Nonnull task) {
+        AWSAutoScalingBatchDeleteScheduledActionAnswer *result = task.result;
+        NSError *error = task.error;
+
+        if (completionHandler) {
+            completionHandler(result, error);
+        }
+
+        return nil;
+    }];
+}
+
+- (AWSTask<AWSAutoScalingBatchPutScheduledUpdateGroupActionAnswer *> *)batchPutScheduledUpdateGroupAction:(AWSAutoScalingBatchPutScheduledUpdateGroupActionType *)request {
+    return [self invokeRequest:request
+                    HTTPMethod:AWSHTTPMethodPOST
+                     URLString:@""
+                  targetPrefix:@""
+                 operationName:@"BatchPutScheduledUpdateGroupAction"
+                   outputClass:[AWSAutoScalingBatchPutScheduledUpdateGroupActionAnswer class]];
+}
+
+- (void)batchPutScheduledUpdateGroupAction:(AWSAutoScalingBatchPutScheduledUpdateGroupActionType *)request
+     completionHandler:(void (^)(AWSAutoScalingBatchPutScheduledUpdateGroupActionAnswer *response, NSError *error))completionHandler {
+    [[self batchPutScheduledUpdateGroupAction:request] continueWithBlock:^id _Nullable(AWSTask<AWSAutoScalingBatchPutScheduledUpdateGroupActionAnswer *> * _Nonnull task) {
+        AWSAutoScalingBatchPutScheduledUpdateGroupActionAnswer *result = task.result;
         NSError *error = task.error;
 
         if (completionHandler) {

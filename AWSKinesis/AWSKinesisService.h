@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 #import "AWSKinesisResources.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+//! SDK version for AWSKinesis
+FOUNDATION_EXPORT NSString *const AWSKinesisSDKVersion;
 
 /**
  <fullname>Amazon Kinesis Data Streams Service API Reference</fullname><p>Amazon Kinesis Data Streams is a managed service that scales elastically for real-time processing of streaming big data.</p>

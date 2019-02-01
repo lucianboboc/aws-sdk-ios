@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 #import "AWSDynamoDBResources.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+//! SDK version for AWSDynamoDB
+FOUNDATION_EXPORT NSString *const AWSDynamoDBSDKVersion;
 
 /**
  <fullname>Amazon DynamoDB</fullname><p>Amazon DynamoDB is a fully managed NoSQL database service that provides fast and predictable performance with seamless scalability. DynamoDB lets you offload the administrative burdens of operating and scaling a distributed database, so that you don't have to worry about hardware provisioning, setup and configuration, replication, software patching, or cluster scaling.</p><p>With DynamoDB, you can create database tables that can store and retrieve any amount of data, and serve any level of request traffic. You can scale up or scale down your tables' throughput capacity without downtime or performance degradation, and use the AWS Management Console to monitor resource utilization and performance metrics.</p><p>DynamoDB automatically spreads the data and traffic for your tables over a sufficient number of servers to handle your throughput and storage requirements, while maintaining consistent and fast performance. All of your data is stored on solid state disks (SSDs) and automatically replicated across multiple Availability Zones in an AWS region, providing built-in high availability and data durability. </p>
@@ -420,6 +423,31 @@ NS_ASSUME_NONNULL_BEGIN
  @see AWSDynamoDBDescribeContinuousBackupsOutput
  */
 - (void)describeContinuousBackups:(AWSDynamoDBDescribeContinuousBackupsInput *)request completionHandler:(void (^ _Nullable)(AWSDynamoDBDescribeContinuousBackupsOutput * _Nullable response, NSError * _Nullable error))completionHandler;
+
+/**
+ DescribeEndpoints
+ 
+ @param request A container for the necessary parameters to execute the DescribeEndpoints service method.
+
+ @return An instance of `AWSTask`. On successful execution, `task.result` will contain an instance of `AWSDynamoDBDescribeEndpointsResponse`.
+ 
+ @see AWSDynamoDBDescribeEndpointsRequest
+ @see AWSDynamoDBDescribeEndpointsResponse
+ */
+- (AWSTask<AWSDynamoDBDescribeEndpointsResponse *> *)describeEndpoints:(AWSDynamoDBDescribeEndpointsRequest *)request;
+
+/**
+ DescribeEndpoints
+ 
+ @param request A container for the necessary parameters to execute the DescribeEndpoints service method.
+ @param completionHandler The completion handler to call when the load request is complete.
+                          `response` - A response object, or `nil` if the request failed.
+                          `error` - An error object that indicates why the request failed, or `nil` if the request was successful.
+ 
+ @see AWSDynamoDBDescribeEndpointsRequest
+ @see AWSDynamoDBDescribeEndpointsResponse
+ */
+- (void)describeEndpoints:(AWSDynamoDBDescribeEndpointsRequest *)request completionHandler:(void (^ _Nullable)(AWSDynamoDBDescribeEndpointsResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 /**
  <p>Returns information about the specified global table.</p>

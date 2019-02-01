@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -18,6 +18,11 @@ import AWSIoT
 
 class AWSIoTDataManagerTests: XCTestCase {
     
+    static var tokenKeyName: String? = nil
+    static var tokenValue: String? = nil
+    static var tokenSignature: String? = nil
+    static var customAuthorizerName: String? = nil
+    
     override class func setUp() {
         super.setUp()
         //Constants
@@ -34,6 +39,14 @@ class AWSIoTDataManagerTests: XCTestCase {
         //Setup creds
         AWSTestUtility.setupCognitoCredentialsProvider()
         
+        //Create MQTT Config
+        let lwt = AWSIoTMQTTLastWillAndTestament()
+        lwt.topic = "will-topic";
+        lwt.qos = AWSIoTMQTTQoS.messageDeliveryAttemptedAtLeastOnce
+
+        let mqttConfig = AWSIoTMQTTConfiguration.init(keepAliveTimeInterval: 30.0,
+                                                      baseReconnectTimeInterval: 1.0, minimumConnectionTimeInterval: 20, maximumReconnectTimeInterval: 8, runLoop: RunLoop.current , runLoopMode: RunLoopMode.defaultRunLoopMode.rawValue, autoResubscribe: true, lastWillAndTestament: lwt)
+
         //Setup iOT Manager for Broker 1
         let iotConfigurationBroker1 = AWSServiceConfiguration(region: .USEast1 ,
                 credentialsProvider:AWSServiceManager.default().defaultServiceConfiguration.credentialsProvider)
@@ -50,18 +63,52 @@ class AWSIoTDataManagerTests: XCTestCase {
         
         
         //Setup iOT Data Manager for Broker 1
+        let endpoint1 = AWSTestUtility.getIoTEndPoint("iot-us-east1-endpoint")
+        XCTAssert(endpoint1 != nil, "Could not fetch the iot endpoint from the config file.")
         let iotDataManagerConfigurationBroker1 = AWSServiceConfiguration(region: .USEast1,
-                endpoint: AWSTestUtility.getIoTEndPoint("iot-us-east1-endpoint"),
+                endpoint: AWSEndpoint(urlString: endpoint1!),
                 credentialsProvider: AWSServiceManager.default().defaultServiceConfiguration.credentialsProvider)
-        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, forKey:"iot-data-manager-broker1")
-        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, forKey:"iot-data-manager-broker")
+        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, with: mqttConfig, forKey:"iot-data-manager-broker1")
+        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, with: mqttConfig, forKey:"iot-data-manager-broker")
+        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, with: mqttConfig, forKey:"iot-data-manager-broker-test-subscribe-without-connect")
+        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker1!, with: mqttConfig, forKey:"iot-data-manager-broker-test-without-connect")
         
         
         //Setup iOT Data Manager for Broker 2
+        let endpoint2 = AWSTestUtility.getIoTEndPoint("iot-us-east2-endpoint")
+        XCTAssert(endpoint2 != nil, "Could not fetch the iot endpoint from the config file.")
         let iotDataManagerConfigurationBroker2 = AWSServiceConfiguration(region: .USEast2,
-                endpoint:  AWSTestUtility.getIoTEndPoint("iot-us-east2-endpoint"),
+                endpoint:  AWSEndpoint(urlString: endpoint2!),
                 credentialsProvider: AWSServiceManager.default().defaultServiceConfiguration.credentialsProvider)
-        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker2!, forKey:"iot-data-manager-broker2")
+        AWSIoTDataManager.register(with:iotDataManagerConfigurationBroker2!, with: mqttConfig, forKey:"iot-data-manager-broker2")
+        
+        //Setup iOT Data Manager for Custom Auth using endpoint-1
+        func setUpIoTDataManagerWithCustomAuth() -> Void {
+            let credentialsJson: [String : String]? = AWSTestUtility.getCredentialsJsonAsDictionary()
+            if credentialsJson?["iot-custom-authorizer-name"] != nil {
+                AWSIoTDataManagerTests.customAuthorizerName = credentialsJson?["iot-custom-authorizer-name"]
+            }
+            
+            if credentialsJson?["iot-custom-authorizer-token-value"] != nil {
+                AWSIoTDataManagerTests.tokenValue = credentialsJson?["iot-custom-authorizer-token-value"]
+            }
+            
+            if credentialsJson?["iot-custom-authorizer-token-key-name"] != nil {
+                AWSIoTDataManagerTests.tokenKeyName = credentialsJson?["iot-custom-authorizer-token-key-name"]
+            }
+            
+            if credentialsJson?["iot-custom-authorizer-token-signature"] != nil {
+                AWSIoTDataManagerTests.tokenSignature = credentialsJson?["iot-custom-authorizer-token-signature"]
+            }
+            
+            let iotDataManagerConfigurationBrokerForCustomAuth = AWSServiceConfiguration(region: .USEast1,
+                                                                                         endpoint: AWSEndpoint(urlString: endpoint1!),
+                                                                                         credentialsProvider: AWSServiceManager.default().defaultServiceConfiguration.credentialsProvider)
+            AWSIoTDataManager.register(with: iotDataManagerConfigurationBrokerForCustomAuth!,
+                                       with: mqttConfig,
+                                       forKey:"iot-data-manager-broker-custom-auth")
+        }
+        setUpIoTDataManagerWithCustomAuth()
         
         func createCertAndAttachPolicy(certName: String, iotManager:AWSIoTManager, iot:AWSIoT)
         {
@@ -69,7 +116,10 @@ class AWSIoTDataManagerTests: XCTestCase {
             var certificateID:String? = defaults.string(forKey: certName)
             if (certificateID == nil) {
                 //Certificate not found. Create one
-                let csrDictionary = [ "commonName":CertificateSigningRequestCommonName, "countryName":CertificateSigningRequestCountryName, "organizationName":CertificateSigningRequestOrganizationName, "organizationalUnitName":CertificateSigningRequestOrganizationalUnitName]
+                let csrDictionary = [ "commonName":CertificateSigningRequestCommonName,
+                                      "countryName":CertificateSigningRequestCountryName,
+                                      "organizationName":CertificateSigningRequestOrganizationName,
+                                      "organizationalUnitName":CertificateSigningRequestOrganizationalUnitName]
                 
                 let dispatchGroup = DispatchGroup()
                 dispatchGroup.enter()
@@ -112,13 +162,11 @@ class AWSIoTDataManagerTests: XCTestCase {
         let iotManagerBroker2:AWSIoTManager = AWSIoTManager(forKey: "iot-manager-broker2")
         let iotBroker2:AWSIoT = AWSIoT(forKey: "iot-broker2")
         createCertAndAttachPolicy(certName: "TestCertBroker2", iotManager: iotManagerBroker2, iot: iotBroker2)
-    
     }
     
     
     override func setUp() {
         super.setUp()
-        
     }
     
     override func tearDown() {
@@ -171,7 +219,10 @@ class AWSIoTDataManagerTests: XCTestCase {
         let defaults = UserDefaults.standard
         let certificateID:String? = defaults.string(forKey: "TestCertBroker1")
         
-        iotDataManager.connect( withClientId: uuid, cleanSession:true, certificateId:certificateID!, statusCallback: mqttEventCallback)
+        iotDataManager.connect(withClientId: uuid,
+                               cleanSession: true,
+                              certificateId: certificateID!,
+                             statusCallback: mqttEventCallback)
         print("Connect call completed")
         
         wait(for:[hasConnected], timeout: 30)
@@ -187,7 +238,8 @@ class AWSIoTDataManagerTests: XCTestCase {
     }
    
     func testPublishWithoutConnect() {
-        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker")
+        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-test-without-connect")
+        
         XCTAssertFalse( iotDataManager.publishString("Test", onTopic:"TestTopic", qoS:.messageDeliveryAttemptedAtLeastOnce))
         XCTAssertFalse( iotDataManager.publishString("Test", onTopic:"TestTopic", qoS:.messageDeliveryAttemptedAtLeastOnce, ackCallback: {}))
         
@@ -197,7 +249,7 @@ class AWSIoTDataManagerTests: XCTestCase {
     }
     
     func testSubscribeWithoutConnect() {
-        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker")
+        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-test-without-connect")
         
         var result = iotDataManager.subscribe(toTopic: "testTopic", qoS: .messageDeliveryAttemptedAtLeastOnce, messageCallback: {
             (payload) ->Void in
@@ -226,12 +278,12 @@ class AWSIoTDataManagerTests: XCTestCase {
     }
     
     func testUnsubscribeWithoutConnect() {
-        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker")
+        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-test-without-connect")
         iotDataManager.unsubscribeTopic("Topic")
     }
     
     func testDisconnectWithoutConnect() {
-        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker")
+        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-test-without-connect")
         iotDataManager.disconnect()
     }
     
@@ -670,9 +722,7 @@ class AWSIoTDataManagerTests: XCTestCase {
         disconnectIssued = true
         wait(for:[hasDisconnected], timeout: 30)
         XCTAssertFalse(connected)
-        
     }
- 
     
     func testPublishSubscribeWithCertMultipleConsecutiveConnections() {
         self.publishSubscribeMultipleConsecutiveConnections(useWebSocket: false)
@@ -702,34 +752,33 @@ class AWSIoTDataManagerTests: XCTestCase {
         
         func mqttEventCallback( _ status: AWSIoTMQTTStatus )
         {
-            print("connection status = \(status.rawValue)")
             switch(status)
             {
             case .connecting:
-                print ("Connecting...")
+                print ("Event Received: Connecting...")
                 
             case .connected:
-                print("Connected")
+                print("Event Received: Connected")
                 connected = true
                 (hasConnected[iteration] as! XCTestExpectation).fulfill()
                 
             case .disconnected:
+                print("Event Received: Disconnected")
                 if (disconnectIssued ) {
-                    print("Disconnected")
                     connected = false
                     (hasDisconnected[iteration]  as! XCTestExpectation).fulfill()
                 }
             case .connectionRefused:
-                print("Connection Refused")
+                print("Event Received: Connection Refused")
                 
             case .connectionError:
-                print("Connection Error")
+                print("Event Received: Connection Error")
                 
             case .protocolError:
-                print("Protocol Error")
+                print("Event Received: Protocol Error")
                 
             default:
-                print("Unknown state: \(status.rawValue)")
+                print("Event Received: Unknown state: \(status.rawValue)")
             }
         }
         
@@ -788,7 +837,7 @@ class AWSIoTDataManagerTests: XCTestCase {
             disconnectIssued = true
             wait(for:[hasDisconnected[iteration] as! XCTestExpectation], timeout:90)
             XCTAssertFalse(connected)
-            
+            sleep(1)
             iteration = iteration + 1
         }
         
@@ -810,6 +859,7 @@ class AWSIoTDataManagerTests: XCTestCase {
     func publishSubscribeMultipleConsecutiveConnectionsWithManualDisconnect(useWebSocket: Bool) {
         var messageCount = 0
         var connected = false
+        var disconnected = false
         let numberOfAttempts = 50
         var iteration = 0;
         let hasConnected:(NSMutableArray) = NSMutableArray()
@@ -827,37 +877,37 @@ class AWSIoTDataManagerTests: XCTestCase {
         
         func mqttEventCallback( _ status: AWSIoTMQTTStatus )
         {
-            print("connection status = \(status.rawValue)")
             switch(status)
             {
             case .connecting:
-                print ("Connecting...")
+                print ("Event Received: Connecting...")
                 
             case .connected:
-                print("Connected")
+                print("Event Received: Connected")
                 if ( !connected) {
                     connected = true
                     (hasConnected[iteration] as! XCTestExpectation).fulfill()
                 }
                 
             case .disconnected:
-                if (disconnectIssued && connected) {
-                    print("Disconnected")
+                 print("Event Received: Disconnected")
+                if (disconnectIssued && !disconnected) {
                     connected = false
+                    disconnected = true
                     (hasDisconnected[iteration]  as! XCTestExpectation).fulfill()
                 }
                 
             case .connectionRefused:
-                print("Connection Refused")
+                print("Event Received: Connection Refused")
                 
             case .connectionError:
-                print("Connection Error")
+                print("Event Received: Connection Error")
                 
             case .protocolError:
-                print("Protocol Error")
+                print("Event Received: Protocol Error")
                 
             default:
-                print("Unknown state: \(status.rawValue)")
+                print("Event Received: Unknown state: \(status.rawValue)")
             }
         }
         
@@ -867,22 +917,27 @@ class AWSIoTDataManagerTests: XCTestCase {
         let certificateID:String? = defaults.string(forKey: "TestCertBroker1")
         
         while (iteration < numberOfAttempts ) {
+            //Set state
+            connected = false
+            disconnected = false
             disconnectIssued = false
+
             messageCount = 0
             var subscriptionVerified = false
             connected = false
+            print ("Test: Issued connect")
             if (useWebSocket) {
                 iotDataManager.connectUsingWebSocket(withClientId: UUID().uuidString, cleanSession: true, statusCallback: mqttEventCallback)
             }
             else {
                 iotDataManager.connect( withClientId: UUID().uuidString, cleanSession:true, certificateId:certificateID!, statusCallback: mqttEventCallback)
             }
-            print("Connect call completed")
             
             wait(for:[hasConnected[iteration] as! XCTestExpectation], timeout: 120)
             if (!connected) {
                 return
             }
+            print("Test: Connected Successfully")
             XCTAssertTrue(connected, "Successfully established MQTT Connection")
             
             let testMessage = "Test Message\(iteration)"
@@ -916,12 +971,14 @@ class AWSIoTDataManagerTests: XCTestCase {
             wait(for:[gotMessages[iteration] as! XCTestExpectation], timeout:120)
             
             //Disconnect
-            iotDataManager.disconnect()
             disconnectIssued = true
+            iotDataManager.disconnect()
+            print("Test: Issued Disconnect")
             wait(for:[hasDisconnected[iteration] as! XCTestExpectation], timeout:120)
-            XCTAssertFalse(connected)
-            
+            XCTAssertTrue(disconnected)
+            print("Test: Disconnected successfully" )
             iteration = iteration + 1
+            sleep(2)
         }
         
     }
@@ -939,7 +996,6 @@ class AWSIoTDataManagerTests: XCTestCase {
         
         func mqttEventCallback( _ status: AWSIoTMQTTStatus )
         {
-            print("connection status = \(status.rawValue)")
             switch(status)
             {
             case .connecting:
@@ -1024,9 +1080,364 @@ class AWSIoTDataManagerTests: XCTestCase {
         disconnectIssued = true
         wait(for:[hasDisconnected], timeout: 30)
         XCTAssertFalse(connected)
+
     }
     
     
+    
+    
+    
+    // ---------- CUSTOM AUTH TESTS ----------
+    /**
+     * For the following tests on `CustomAuth` to work, please setup the `Custom Authorizer` workflow
+     * involving AWS IoT Core and AWS Lambda Functions in your AWS account. Once the setup is complete,
+     * add the following key-value pairs in `AWSCoreTests/Resources/credentials.json` file locally.
+     *
+     * {
+     *    "iot-custom-authorizer-name":"<my-custom-authorizer>",
+     *    "iot-custom-authorizer-token-key-name":"<key-name-for-http-header>",
+     *    "iot-custom-authorizer-token-value":"<token>",
+     *    "iot-custom-authorizer-token-signature":"<base64-encoded-signature>"
+     * }
+     *
+     * See: https://aws.amazon.com/blogs/security/how-to-use-your-own-identity-and-access-management-systems-to-control-access-to-aws-iot-resources/
+     * for setting up the Custom Authorizer and Lambda function.
+     **/
+    // This test creates a WebSocket connection with Custom Auth, asserts the status is `Connected`
+    // and disconnects the connection.
+    func testCustomAuthConnectAndDisconnect() {
+        print("testConnectAndDisconnectWithCustomAuth: Calling Connect using Custom Auth.")
+        
+        var connected = false
+        let hasConnected = self.expectation(description: "MQTT connection has been established")
+        var disconnectIssued = false
+        let hasDisconnected = self.expectation(description: "Disconnected")
+        
+        func mqttEventCallback( _ status: AWSIoTMQTTStatus )
+        {
+            print("connection status = \(status.rawValue)")
+            switch(status)
+            {
+            case .connecting:
+                print ("Connecting...")
+                
+            case .connected:
+                print("Connected")
+                connected = true
+                hasConnected.fulfill()
+                
+            case .disconnected:
+                if (disconnectIssued) {
+                    print("Disconnected")
+                    connected = false
+                    hasDisconnected.fulfill()
+                }
+                
+            case .connectionRefused:
+                print("Connection Refused")
+                
+            case .connectionError:
+                print("Connection Error")
+                
+            case .protocolError:
+                print("Protocol Error")
+                
+            default:
+                print("Unknown state: \(status.rawValue)")
+            }
+        }
+        
+        // Use the MQTT broker from the `endpoint1`
+        let iotDataManager: AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-custom-auth")
+        let uuid = UUID().uuidString
+        
+        let connectedWS: Bool = iotDataManager.connectUsingWebSocket(withClientId: uuid,
+                                                                     cleanSession: true,
+                                                                     customAuthorizerName: AWSIoTDataManagerTests.customAuthorizerName!,
+                                                                     tokenKeyName: AWSIoTDataManagerTests.tokenKeyName!,
+                                                                     tokenValue: AWSIoTDataManagerTests.tokenValue!,
+                                                                     tokenSignature: AWSIoTDataManagerTests.tokenSignature!,
+                                                                     statusCallback: mqttEventCallback)
+        print("Calling connect completed. Waiting for 30 seconds to see if the connection is established.")
+        XCTAssertTrue(connectedWS, "Successfully established MQTT Connection using Custom Auth.")
+        
+        wait(for:[hasConnected], timeout: 30)
+        XCTAssertTrue(connected, "Successfully established MQTT Connection using Custom Auth.")
+        
+        if (connected) {
+            iotDataManager.disconnect()
+            disconnectIssued = true
+            wait(for:[hasDisconnected], timeout: 30)
+            XCTAssertFalse(connected)
+        }
+    }
+    
+    // This test creates a WebSocket connection with Custom Auth, but passes an invalid token,
+    // asserts the status is `ConnectionError`
+    func testCustomAuthConnectAndDisconnectInvalidToken() {
+        print("testConnectAndDisconnectWithCustomAuth: Calling Connect using Custom Auth.")
+        
+        let hasConnectionError = self.expectation(description: "Connection Error")
+        
+        func mqttEventCallback( _ status: AWSIoTMQTTStatus )
+        {
+            print("connection status = \(status.rawValue)")
+            switch(status)
+            {
+            case .connecting:
+                print ("Connecting...")
+                
+            case .connected:
+                print("Connected")
+
+            case .disconnected:
+                print("Disconnected")
+                
+            case .connectionRefused:
+                print("Connection Refused")
+                
+            case .connectionError:
+                print("Connection Error")
+                hasConnectionError.fulfill()
+                
+            case .protocolError:
+                print("Protocol Error")
+                
+            default:
+                print("Unknown state: \(status.rawValue)")
+            }
+        }
+        
+        // Use the MQTT broker from the `endpoint1`
+        let iotDataManager: AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-custom-auth")
+        let uuid = UUID().uuidString
+        
+        let connectedWS: Bool = iotDataManager.connectUsingWebSocket(withClientId: uuid,
+                                                                     cleanSession: true,
+                                                                     customAuthorizerName: AWSIoTDataManagerTests.customAuthorizerName!,
+                                                                     tokenKeyName: AWSIoTDataManagerTests.tokenKeyName!,
+                                                                     tokenValue: "Deny",
+                                                                     tokenSignature: "Deny",
+                                                                     statusCallback: mqttEventCallback)
+        print("Calling connect completed. Waiting for 30 seconds to see if the connection errors out.")
+        
+        wait(for:[hasConnectionError], timeout: 30)
+        print("Expected the MQTT Connection using Custom Auth to fail due to invalid token and signature.")
+        
+        iotDataManager.disconnect()
+    }
+    
+    // This test opens a WebSocket connection with CustomAuth and publishes
+    // and subscribes to the topic and asserts subscribe works and disconnects.
+    func testCustomAuthPublishSubscribe() {
+        print("testCustomAuthPublishSubscribe: Publish and subscribe with CustomAuth.")
+        var connected = false
+        let hasConnected = self.expectation(description: "MQTT connection has been established")
+        var disconnectIssued = false
+        let hasDisconnected = self.expectation(description: "Disconnected")
+        
+        var messageCount = 0
+        let gotMessage = self.expectation(description: "Got message on subscription")
+        
+        func mqttEventCallback( _ status: AWSIoTMQTTStatus )
+        {
+            print("connection status = \(status.rawValue)")
+            switch(status)
+            {
+            case .connecting:
+                print ("Connecting...")
+                
+            case .connected:
+                print("Connected")
+                connected = true
+                hasConnected.fulfill()
+                
+            case .disconnected:
+                if (disconnectIssued) {
+                    print("Disconnected")
+                    connected = false
+                    hasDisconnected.fulfill()
+                }
+                
+            case .connectionRefused:
+                print("Connection Refused")
+                
+            case .connectionError:
+                print("Connection Error")
+                
+            case .protocolError:
+                print("Protocol Error")
+                
+            default:
+                print("Unknown state: \(status.rawValue)")
+            }
+        }
+        
+        // Use the MQTT broker from the `endpoint1`
+        let iotDataManager: AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-custom-auth")
+        let uuid = UUID().uuidString
+        
+        let connectedWS: Bool = iotDataManager.connectUsingWebSocket(withClientId: uuid,
+                                                                     cleanSession: true,
+                                                                     customAuthorizerName: AWSIoTDataManagerTests.customAuthorizerName!,
+                                                                     tokenKeyName: AWSIoTDataManagerTests.tokenKeyName!,
+                                                                     tokenValue: AWSIoTDataManagerTests.tokenValue!,
+                                                                     tokenSignature: AWSIoTDataManagerTests.tokenSignature!,
+                                                                     statusCallback: mqttEventCallback)
+        print("Calling connect completed. Waiting for 30 seconds to see if the connection is established.")
+        XCTAssertTrue(connectedWS, "Successfully established MQTT Connection using Custom Auth.")
+        
+        wait(for:[hasConnected], timeout: 30)
+        XCTAssertTrue(connected, "Successfully established MQTT Connection using Custom Auth.")
+        
+        if (!connected) {
+            print ("Connection not established.")
+            return
+        }
+        
+        let testMessage = "Test Message"
+        let testTopic = "customauthtesting"
+        
+        //Subscribe to TestTopic
+        iotDataManager.subscribe(toTopic: testTopic, qoS: .messageDeliveryAttemptedAtLeastOnce, messageCallback: {
+            (payload) ->Void in
+            let stringValue:String = NSString(data: payload, encoding: String.Encoding.utf8.rawValue)! as String
+            print("received: \(stringValue)")
+            XCTAssertEqual(testMessage, stringValue)
+            messageCount = messageCount + 1
+            if (messageCount >= 5 ) {
+                gotMessage.fulfill()
+            }
+        })
+        
+        //Publish to TestTopic 5 times
+        for _ in 1...5 {
+            iotDataManager.publishString(testMessage, onTopic:testTopic, qoS:.messageDeliveryAttemptedAtLeastOnce)
+        }
+        
+        wait(for:[gotMessage], timeout:30)
+        
+        //Disconnect
+        iotDataManager.disconnect()
+        disconnectIssued = true
+        wait(for:[hasDisconnected], timeout: 30)
+        XCTAssertFalse(connected)
+    }
+    
+    // This test creates multiple WebSocket connections with Custom Auth, ensures the status is `Connected`
+    // Publishes and subscribes to a topic. The number of connections is controlled by `numberOfAttempts`.
+    func testCustomAuthPublishSubscribeMultipleConsecutiveConnections() {
+        var messageCount = 0
+        var connected = false
+        let numberOfAttempts = 5
+        var iteration = 0;
+        let hasConnected:(NSMutableArray) = NSMutableArray()
+        let hasDisconnected:(NSMutableArray) = NSMutableArray()
+        let gotMessages:NSMutableArray = NSMutableArray()
+        let subConfirmed:NSMutableArray = NSMutableArray()
+        var disconnectIssued = false
+        
+        for i in 1...numberOfAttempts  {
+            hasConnected.add(self.expectation(description: "MQTT connection\(i) has been established"))
+            hasDisconnected.add(self.expectation(description: "Disconnected\(i)"))
+            gotMessages.add(self.expectation(description: "Got message on subscription \(i)"))
+            subConfirmed.add(self.expectation(description: "Subscription \(i) confirmed"))
+        }
+        
+        func mqttEventCallback( _ status: AWSIoTMQTTStatus )
+        {
+            switch(status)
+            {
+            case .connecting:
+                print ("Event Received: Connecting...")
+                
+            case .connected:
+                print("Event Received: Connected")
+                connected = true
+                (hasConnected[iteration] as! XCTestExpectation).fulfill()
+                
+            case .disconnected:
+                print("Event Received: Disconnected")
+                if (disconnectIssued ) {
+                    connected = false
+                    (hasDisconnected[iteration]  as! XCTestExpectation).fulfill()
+                }
+            case .connectionRefused:
+                print("Event Received: Connection Refused")
+                
+            case .connectionError:
+                print("Event Received: Connection Error")
+                
+            case .protocolError:
+                print("Event Received: Protocol Error")
+                
+            default:
+                print("Event Received: Unknown state: \(status.rawValue)")
+            }
+        }
+        
+        let iotDataManager:AWSIoTDataManager = AWSIoTDataManager(forKey: "iot-data-manager-broker-custom-auth")
+        print("Calling Connect")
+        
+        while (iteration < numberOfAttempts ) {
+            disconnectIssued = false
+            messageCount = 0
+            connected = false
+            let uuid = UUID().uuidString
+            print("Calling Connect using Custom Auth.")
+            
+            let tokenValue: String? = "allow"
+            let tokenSignature: String? = tokenValue?.data(using: .utf8)?.base64EncodedString()
+            
+            connected = iotDataManager.connectUsingWebSocket(withClientId: uuid,
+                                                             cleanSession: true,
+                                                             customAuthorizerName: AWSIoTDataManagerTests.customAuthorizerName!,
+                                                             tokenKeyName: AWSIoTDataManagerTests.tokenKeyName!,
+                                                             tokenValue: AWSIoTDataManagerTests.tokenValue!,
+                                                             tokenSignature: AWSIoTDataManagerTests.tokenSignature!,
+                                                             statusCallback: mqttEventCallback)
+            wait(for:[hasConnected[iteration] as! XCTestExpectation], timeout: 90)
+            if (!connected) {
+                return
+            }
+            XCTAssertTrue(connected, "Successfully established MQTT Connection")
+            
+            let testMessage = "Test Message\(iteration)"
+            let testTopic = "TestTopic\(iteration)"
+            
+            //Subscribe to TestTopic
+            iotDataManager.subscribe(toTopic: testTopic,
+                                     qoS: .messageDeliveryAttemptedAtLeastOnce,
+                                     messageCallback: {
+                                        (payload) ->Void in
+                                        let stringValue:String = NSString(data: payload, encoding: String.Encoding.utf8.rawValue)! as String
+                                        print("received: \(stringValue)")
+                                        XCTAssertEqual(testMessage, stringValue)
+                                        messageCount = messageCount+1
+                                        
+                                        if (messageCount == 5 ) {
+                                            (gotMessages[iteration]  as! XCTestExpectation).fulfill()
+                                        }
+                                    },
+                                    ackCallback: {
+                                        (subConfirmed[iteration]  as! XCTestExpectation).fulfill()
+                                    })
+            wait(for: [subConfirmed[iteration] as! XCTestExpectation], timeout:90)
+            
+            //Publish to TestTopic 5 times
+            for _ in 1...5 {
+                iotDataManager.publishString(testMessage, onTopic:testTopic, qoS:.messageDeliveryAttemptedAtLeastOnce)
+            }
+            
+            wait(for:[gotMessages[iteration] as! XCTestExpectation], timeout:90)
+            
+            //Disconnect
+            iotDataManager.disconnect()
+            disconnectIssued = true
+            wait(for:[hasDisconnected[iteration] as! XCTestExpectation], timeout:90)
+            XCTAssertFalse(connected)
+            sleep(1)
+            iteration = iteration + 1
+        }
+    }
 }
-
-
